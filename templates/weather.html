@@ -1,0 +1,257 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Report</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #87CEEB 0%, #F0E68C 50%, #FFA07A 100%);
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body.dark {
+            background: #121212;
+            color: #eaeaea;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        .weather-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 35px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        body.dark .weather-card {
+            background: #1f1f1f;
+        }
+
+        .app-header { text-align: center; margin-bottom: 30px; }
+
+        .app-title {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+
+        .search-wrapper { display: flex; gap: 10px; }
+
+        .search-input {
+            flex: 1;
+            padding: 16px 22px;
+            border-radius: 50px;
+            border: 2px solid #ddd;
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            border: none;
+            padding: 16px 32px;
+            border-radius: 50px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .unit-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .unit-btn {
+            padding: 6px 18px;
+            border-radius: 20px;
+            border: 2px solid #ddd;
+            background: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .unit-btn.active {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .main-weather {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #87CEEB 0%, #B0E0E6 100%);
+            border-radius: 20px;
+            color: white;
+            margin-bottom: 25px;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+        }
+
+        .detail-card {
+            background: white;
+            border-radius: 18px;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .detail-label {
+            font-size: 0.85rem;
+            color: #777;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .additional-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 18px;
+            margin-top: 25px;
+        }
+
+        .info-item {
+            background: white;
+            border-radius: 16px;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .forecast-section { margin-top: 35px; }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 18px;
+        }
+
+        .forecast-card {
+            background: white;
+            border-radius: 18px;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .d-none { display: none !important; }
+    </style>
+</head>
+
+<body>
+<div class="container mt-5">
+    <div class="weather-card">
+
+        <!-- HEADER -->
+        <div class="app-header">
+            <h1 class="app-title">
+                <i class="fas fa-cloud-sun"></i> Weather Report
+            </h1>
+            <p>Google-style real-time weather</p>
+
+            <!-- DARK MODE -->
+            <button class="btn btn-sm btn-outline-secondary mt-2" onclick="toggleDarkMode()">
+                🌙 Dark Mode
+            </button>
+        </div>
+
+        <!-- SEARCH -->
+        <div class="search-section mb-4">
+            <div class="search-wrapper">
+                <input type="text" id="city" class="search-input" placeholder="Enter city name">
+                <button class="search-btn" onclick="getWeather()">Search</button>
+            </div>
+        </div>
+
+        <!-- ERROR -->
+        <div id="error" class="alert alert-danger d-none"></div>
+
+        <!-- RESULT -->
+        <div id="result" class="d-none">
+
+            <!-- UNIT TOGGLE -->
+            <div class="unit-toggle">
+                <button class="unit-btn active" onclick="toggleUnit('celsius')">°C</button>
+                <button class="unit-btn" onclick="toggleUnit('fahrenheit')">°F</button>
+            </div>
+
+            <!-- MAIN WEATHER -->
+            <div class="main-weather">
+                <h2 id="cityName"></h2>
+                <p id="time"></p>
+                <img id="icon" alt="Weather icon">
+                <p id="condition"></p>
+            </div>
+
+            <!-- DETAILS -->
+            <div class="weather-details">
+                <div class="detail-card">
+                    <div class="detail-label">Temperature</div>
+                    <div class="detail-value">
+                        🌡️ <span id="temp"></span>°<span id="tempUnit">C</span>
+                    </div>
+                </div>
+                <div class="detail-card">
+                    <div class="detail-label">Humidity</div>
+                    <div class="detail-value">💧 <span id="humidity"></span>%</div>
+                </div>
+                <div class="detail-card">
+                    <div class="detail-label">Wind</div>
+                    <div class="detail-value">💨 <span id="wind"></span> km/h</div>
+                </div>
+            </div>
+
+            <!-- EXTRA INFO -->
+            <div class="additional-info">
+                <div class="info-item">Feels Like: <span id="feelsLike"></span>°</div>
+                <div class="info-item">Pressure: <span id="pressure"></span> mb</div>
+                <div class="info-item">Clouds: <span id="clouds"></span>%</div>
+                <div class="info-item">UV: <span id="uv"></span></div>
+            </div>
+
+            <!-- SOURCE INFO -->
+            <p id="sourceInfo" class="text-center text-muted mt-3"></p>
+
+            <!-- FORECAST -->
+            <div id="forecastSection" class="forecast-section d-none">
+                <h3><i class="fas fa-calendar-alt"></i> 3-Day Forecast</h3>
+                <div id="forecastContainer" class="forecast-grid"></div>
+            </div>
+
+            <!-- HOURLY CHART -->
+            <div class="mt-4">
+                <canvas id="hourlyChart" height="120"></canvas>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- JS -->
+<script src="{% static 'js/weather.js' %}"></script>
+
+</body>
+</html>

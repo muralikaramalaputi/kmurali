@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: weather-app
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn weather_project.wsgi:application"
+    envVars:
+      - key: DEBUG
+        value: False
+      - key: SECRET_KEY
+        generateValue: true
